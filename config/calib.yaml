@@ -14,3 +14,5 @@ lidar_camera_calib:
         # Calibration Parameters.!
         calib_config_file: "/home/simi/gv_ws/src/lidar_camera_calib/config/config_outdoor.yaml"
         use_rough_calib: true # set true if your initial_extrinsic is bad
+        save_img: true
+        folder: "/home/simi/gv_ws/src/lidar_camera_calib/result"

@@ -22,6 +22,9 @@ double height;
 // Calib config
 bool use_rough_calib;
 string calib_config_file;
+// Save image
+bool save_img;
+std::string folder;
 // instrins matrix
 Eigen::Matrix3d inner;
 // Distortion coefficient
@@ -180,6 +183,7 @@ void roughCalib(Calibration &calibra, Vector6d &calib_params,
                             calibra.rgb_egde_cloud_, calibra.plane_line_cloud_,
                             pnp_list);
           cv::Mat projection_img = calibra.getProjectionImg(calib_params);
+          cv::namedWindow("Rough Optimization", cv::WINDOW_NORMAL);
           cv::imshow("Rough Optimization", projection_img);
           cv::waitKey(50);
         }
@@ -203,6 +207,8 @@ int main(int argc, char **argv) {
   node->declare_parameter("dist_coeffs", std::vector<double>());
   node->declare_parameter("use_rough_calib", false);
   node->declare_parameter("calib_config_file", "");
+  node->declare_parameter("save_img", false);
+  node->declare_parameter("folder", "");
   
   // read parameters
   node->get_parameter("image_file", image_file);
@@ -212,6 +218,8 @@ int main(int argc, char **argv) {
   node->get_parameter("dist_coeffs", dist_coeffs);
   node->get_parameter("use_rough_calib", use_rough_calib);
   node->get_parameter("calib_config_file", calib_config_file);
+  node->get_parameter("save_img", save_img);
+  node->get_parameter("folder", folder);
 
   Calibration calibra(options);
   calibra.initializeCalib(image_file, pcd_file, calib_config_file);
@@ -266,17 +274,21 @@ int main(int argc, char **argv) {
   calibra.colorCloud(calib_params, 5, calibra.image_, calibra.raw_lidar_cloud_,
                      rgb_cloud);
   pcl::toROSMsg(*rgb_cloud, pub_cloud);
-  pub_cloud.header.frame_id = "livox";
+  pub_cloud.header.frame_id = "lidar_link";
   calibra.init_rgb_cloud_pub_->publish(pub_cloud);
   cv::Mat init_img = calibra.getProjectionImg(calib_params);
+  cv::namedWindow("Initial Extrinsic", cv::WINDOW_NORMAL);
   cv::imshow("Initial extrinsic", init_img);
-  cv::imwrite("/home/ycj/data/calib/init.png", init_img);
+  if (save_img){
+    cv::imwrite(folder+"/init.png", init_img);
+  }
   cv::waitKey(1000);
 
   if (use_rough_calib) {
     roughCalib(calibra, calib_params, DEG2RAD(0.1), 50);
   }
   cv::Mat test_img = calibra.getProjectionImg(calib_params);
+  cv::namedWindow("After rough extrinsic", cv::WINDOW_NORMAL);
   cv::imshow("After rough extrinsic", test_img);
   cv::waitKey(1000);
   int iter = 0;
@@ -305,6 +317,7 @@ int main(int argc, char **argv) {
                 << " pnp size:" << vpnp_list.size() << std::endl;
 
       cv::Mat projection_img = calibra.getProjectionImg(calib_params);
+      cv::namedWindow("Optimization", cv::WINDOW_NORMAL);
       cv::imshow("Optimization", projection_img);
       cv::waitKey(100);
       Eigen::Vector3d euler_angle(calib_params[0], calib_params[1],
@@ -398,8 +411,11 @@ int main(int argc, char **argv) {
   }
   outfile << 0 << "," << 0 << "," << 0 << "," << 1 << std::endl;
   cv::Mat opt_img = calibra.getProjectionImg(calib_params);
+  cv::namedWindow("Optimization result", cv::WINDOW_NORMAL);
   cv::imshow("Optimization result", opt_img);
-  cv::imwrite("/home/ycj/data/calib/opt.png", opt_img);
+  if (save_img) {
+    cv::imwrite(folder+"/result.png", opt_img);
+  }
   cv::waitKey(1000);
   Eigen::Matrix3d init_rotation;
   init_rotation << 0, -1.0, 0, 0, 0, -1.0, 1, 0, 0;
@@ -420,7 +436,7 @@ int main(int argc, char **argv) {
     calibra.colorCloud(calib_params, 5, calibra.image_,
                        calibra.raw_lidar_cloud_, rgb_cloud);
     pcl::toROSMsg(*rgb_cloud, pub_cloud);
-    pub_cloud.header.frame_id = "livox";
+    pub_cloud.header.frame_id = "lidar_link";
     calibra.rgb_cloud_pub_->publish(pub_cloud);
     sensor_msgs::msg::Image img_msg =
         *cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", opt_img).toImageMsg();

@@ -414,6 +414,7 @@ void Calibration::projection(
   std::vector<cv::Point3f> pts_3d;
   std::vector<float> intensity_list;
   Eigen::AngleAxisd rotation_vector3;
+  // Assume ZYX order
   rotation_vector3 =
       Eigen::AngleAxisd(extrinsic_params[0], Eigen::Vector3d::UnitZ()) *
       Eigen::AngleAxisd(extrinsic_params[1], Eigen::Vector3d::UnitY()) *
@@ -422,7 +423,9 @@ void Calibration::projection(
     pcl::PointXYZI point_3d = lidar_cloud->points[i];
     float depth =
         sqrt(pow(point_3d.x, 2) + pow(point_3d.y, 2) + pow(point_3d.z, 2));
-    if (depth > min_depth_ && depth < max_depth_) {
+    // Reject points behind the camera and too far away
+    // TODO: reject points based on camera FoV + error
+    if (depth > min_depth_ && depth < max_depth_ && point_3d.x > 0) {
       pts_3d.emplace_back(cv::Point3f(point_3d.x, point_3d.y, point_3d.z));
       intensity_list.emplace_back(lidar_cloud->points[i].intensity);
     }
@@ -483,18 +486,11 @@ void Calibration::projection(
       }
     }
   }
-  cv::Mat grey_image_projection;
-  cv::cvtColor(rgb_image_project, grey_image_projection, cv::COLOR_BGR2GRAY);
 
   image_project.convertTo(image_project, CV_8UC1, 1 / 256.0);
   if (is_fill_img) {
     for (int i = 0; i < 5; i++) {
       image_project = fillImg(image_project, UP, LEFT);
-    }
-  }
-  if (is_fill_img) {
-    for (int i = 0; i < 5; i++) {
-      grey_image_projection = fillImg(grey_image_projection, UP, LEFT);
     }
   }
   projection_img = image_project.clone();
