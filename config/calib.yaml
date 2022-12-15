@@ -1,18 +1,18 @@
 lidar_camera_calib:
     ros__parameters:
         # Data path. adjust them!
-        image_file: "/home/simi/gv_ws/bag_1/img.png"
-        pcd_file: "/home/simi/gv_ws/bag_1/map.pcd"
-        result_file: "/home/simi/gv_ws/bag_1/extrinsic.txt"
+        image_file: "/home/simi/gv_ws/pitch_6/img.png"
+        pcd_file: "/home/simi/gv_ws/pitch_6/map.pcd"
+        result_file: "/home/simi/gv_ws/pitch_6/extrinsic.txt"
 
         # Camera Parameters. Adjust them!
-        camera_matrix: [1364.45, 0.0,      958.327,
-                    0.0,     1366.46,  535.074,
-                    0.0,     0.0,      1.0     ]
-        dist_coeffs: [0.0958277, -0.198233, -0.000147133, -0.000430056, 0.000000]
+        camera_matrix: [914.3226318359375, 0.0, 633.5563354492188, 
+                        0.0, 914.1400756835938, 373.4688415527344,
+                        0.0, 0.0, 1.0]
+        dist_coeffs: [0.0, 0.0, 0.0, 0.0, 0.0]
 
         # Calibration Parameters.!
-        calib_config_file: "/home/simi/gv_ws/src/lidar_camera_calib/config/config_outdoor.yaml"
+        calib_config_file: "/home/simi/gv_ws/src/lidar_camera_calib/config/config_indoor.yaml"
         use_rough_calib: true # set true if your initial_extrinsic is bad
         save_img: true
         folder: "/home/simi/gv_ws/src/lidar_camera_calib/result"

@@ -22,14 +22,14 @@ Canny.gray_threshold: 20
 Canny.len_threshold: 200
 
 # Params for Voxel Cutting & Plane Fitting & Edge Extraction
-Voxel.size: 1.0
+Voxel.size: 2.0
 Voxel.down_sample_size: 0.02
-Plane.min_points_size: 60
+Plane.min_points_size: 30
 Plane.normal_theta_min: 30
 Plane.normal_theta_max: 150
 Plane.max_size: 5
-Ransac.dis_threshold: 0.015
-Ransac.iter_num: 200
+Ransac.dis_threshold: 0.02
+# Ransac.iter_num: 200
 Edge.min_dis_threshold: 0.03
 Edge.max_dis_threshold: 0.06
 

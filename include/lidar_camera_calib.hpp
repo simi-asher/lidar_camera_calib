@@ -695,40 +695,37 @@ void Calibration::LiDAREdgeExtraction(
   rclcpp::Rate loop(5000);
   lidar_line_cloud_3d =
       pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+  //Create a splitter
+  pcl::SACSegmentation<pcl::PointXYZI> seg;
+  //Create a model parameter object for logging results
+  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  // The inliers represent points where the error can be tolerated, and record the point cloud serial number
+  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+  // Optional, Set whether the points displayed on the result plane are the split points or the remaining split points
+  seg.setOptimizeCoefficients(true);
+  // Mandatory-Set target geometry
+  seg.setModelType(pcl::SACMODEL_PLANE);
+  //Segmentation method: random sampling method
+  seg.setMethodType(pcl::SAC_RANSAC);
+  //Set the error tolerance range, which is the threshold
+  seg.setDistanceThreshold(ransac_dis_thre);
+
   for (auto iter = voxel_map.begin(); iter != voxel_map.end(); iter++) {
     if (iter->second->cloud->size() > 50) {
       std::vector<Plane> plane_list;
-      // 创建一个体素滤波器
+      // create a voxel filter
       pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filter(
           new pcl::PointCloud<pcl::PointXYZI>);
       pcl::copyPointCloud(*iter->second->cloud, *cloud_filter);
-      //创建一个模型参数对象，用于记录结果
-      pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-      // inliers表示误差能容忍的点，记录点云序号
-      pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-      //创建一个分割器
-      pcl::SACSegmentation<pcl::PointXYZI> seg;
-      // Optional,设置结果平面展示的点是分割掉的点还是分割剩下的点
-      seg.setOptimizeCoefficients(true);
-      // Mandatory-设置目标几何形状
-      seg.setModelType(pcl::SACMODEL_PLANE);
-      //分割方法：随机采样法
-      seg.setMethodType(pcl::SAC_RANSAC);
-      //设置误差容忍范围，也就是阈值
-      if (iter->second->voxel_origin[0] < 10) {
-        seg.setDistanceThreshold(ransac_dis_thre);
-      } else {
-        seg.setDistanceThreshold(ransac_dis_thre);
-      }
       pcl::PointCloud<pcl::PointXYZRGB> color_planner_cloud;
       int plane_index = 0;
       while (cloud_filter->points.size() > 10) {
         pcl::PointCloud<pcl::PointXYZI> planner_cloud;
         pcl::ExtractIndices<pcl::PointXYZI> extract;
-        //输入点云
+        //input point cloud
         seg.setInputCloud(cloud_filter);
         seg.setMaxIterations(500);
-        //分割点云
+        //Segment the point cloud
         seg.segment(*inliers, *coefficients);
         if (inliers->indices.size() == 0) {
           RCLCPP_INFO(get_logger(), 
@@ -814,7 +811,7 @@ void Calibration::calcLine(
     const std::vector<Plane> &plane_list, const double voxel_size,
     const Eigen::Vector3d origin,
     std::vector<pcl::PointCloud<pcl::PointXYZI>> &line_cloud_list) {
-  if (plane_list.size() >= 2 && plane_list.size() <= plane_max_size_) {
+  if (plane_list.size() >= 2) {
     pcl::PointCloud<pcl::PointXYZI> temp_line_cloud;
     for (size_t plane_index1 = 0; plane_index1 < plane_list.size() - 1;
          plane_index1++) {
